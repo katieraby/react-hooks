@@ -1,20 +1,46 @@
 // useEffect: persistent state
 // http://localhost:3000/isolated/exercise/02.js
 
-import * as React from 'react'
+import React, {useEffect, useState, useRef} from 'react'
+
+// custom hook
+const useLocalStorageState = (
+  key,
+  initialValue = '',
+  {serialize = JSON.stringify, deserialize = JSON.parse} = {},
+) => {
+  const [state, setState] = useState(() => {
+    const valInStorage = window.localStorage.getItem(key)
+    if (valInStorage) {
+      return deserialize(valInStorage)
+    }
+    // in case that the initial value is expensive to get, extracts that out
+    return typeof initialValue === 'function' ? initialValue() : initialValue
+  })
+
+  // gives a mutatable object ref which doesnt cause re-renders
+  const prevKeyRef = useRef(key)
+
+  useEffect(() => {
+    const prevKey = prevKeyRef.current
+    // if the key has changed, which may have caused useEffect to run
+    // remove the previous key
+    if (prevKey !== key) {
+      window.localStorage.removeItem(prevKey)
+    }
+    // always ensures the prev key is up to date with the current key
+    prevKeyRef.current = key
+    window.localStorage.setItem(key, serialize(state))
+  }, [key, serialize, state])
+
+  return [state, setState]
+}
 
 function Greeting({initialName = ''}) {
-  // 🐨 initialize the state to the value from localStorage
-  // 💰 window.localStorage.getItem('name') || initialName
-  const [name, setName] = React.useState(initialName)
+  const [name, setName] = useLocalStorageState('name', initialName)
 
-  // 🐨 Here's where you'll use `React.useEffect`.
-  // The callback should set the `name` in localStorage.
-  // 💰 window.localStorage.setItem('name', name)
+  const handleChange = event => setName(event.target.value)
 
-  function handleChange(event) {
-    setName(event.target.value)
-  }
   return (
     <div>
       <form>
