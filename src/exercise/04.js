@@ -5,9 +5,6 @@ import React from 'react'
 import {useLocalStorageState} from '../utils'
 
 function Board({squares, onClick}) {
-  // This is the function your square click handler will call. `square` should
-  // be an index. So if they click the center square, this will be `4`.
-
   function renderSquare(i) {
     return (
       <button className="square" onClick={() => onClick(i)}>
@@ -38,30 +35,31 @@ function Board({squares, onClick}) {
 }
 
 function Game() {
-  const [currentSquares, setSquares] = useLocalStorageState(
-    'squares' || Array(9).fill(null),
+  const [history, setHistory] = useLocalStorageState('history', [
+    Array(9).fill(null),
+  ])
+  const [currentStep, setCurrentStep] = useLocalStorageState(
+    'tic-tac-toe-step',
+    0,
   )
-  const [squareHistory, setSquareHistory] = useLocalStorageState(
-    'history',
-    Array(currentSquares),
-  )
+  const currentSquares = history[currentStep]
+  const nextValue = calculateNextValue(currentSquares)
+  const winner = calculateWinner(currentSquares)
+  const status = calculateStatus(winner, currentSquares, nextValue)
 
   function restart() {
-    setSquares(Array(9).fill(null))
+    setHistory([Array(9).fill(null)])
+    setCurrentStep(0)
   }
 
   function selectSquare(square) {
     if (winner || currentSquares[square]) return
     const squaresCopy = [...currentSquares]
+    const newHistory = history.slice(0, currentStep + 1)
     squaresCopy[square] = nextValue
-    setSquares(squaresCopy)
-    setSquareHistory([...squareHistory, ...squaresCopy])
-    console.log(squareHistory)
+    setHistory([...newHistory, squaresCopy])
+    setCurrentStep(newHistory.length)
   }
-
-  const nextValue = calculateNextValue(currentSquares)
-  const winner = calculateWinner(currentSquares)
-  const status = calculateStatus(winner, currentSquares, nextValue)
 
   return (
     <div className="game">
@@ -73,7 +71,19 @@ function Game() {
       </div>
       <div className="game-info">
         <div>{status}</div>
-        {/* <ol>{moves}</ol> */}
+        <ol>
+          {history.map((_, step) => (
+            <li key={step}>
+              <button
+                disabled={step === currentStep}
+                onClick={() => setCurrentStep(step)}
+              >
+                {step === 0 ? 'Go to game start' : `Go to move #${step}`}
+                {currentStep === step ? ' (current)' : null}
+              </button>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   )
