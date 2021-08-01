@@ -203,5 +203,6 @@ export {
   PokemonForm,
   PokemonDataView,
   fetchPokemon,
+  ErrorFallback,
   PokemonErrorBoundary,
 }
